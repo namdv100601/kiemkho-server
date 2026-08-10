@@ -22,17 +22,25 @@ import { HealthController } from './health.controller';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (config: ConfigService) => ({
-        type: 'postgres' as const,
-        host: config.get<string>('DATABASE_HOST') || 'localhost',
-        port: Number(config.get<string>('DATABASE_PORT') || 5432),
-        username: config.get<string>('DATABASE_USER') || 'pmkiemke',
-        password: config.get<string>('DATABASE_PASSWORD') || 'pmkiemke',
-        database: config.get<string>('DATABASE_NAME') || 'pmkiemke',
-        entities,
-        synchronize: true,
-        logging: false,
-      }),
+      useFactory: (config: ConfigService) => {
+        const syncRaw = config.get<string>('TYPEORM_SYNCHRONIZE');
+        const synchronize =
+          syncRaw == null || syncRaw === ''
+            ? true
+            : ['1', 'true', 'yes', 'on'].includes(String(syncRaw).trim().toLowerCase());
+
+        return {
+          type: 'postgres' as const,
+          host: config.get<string>('DATABASE_HOST') || 'localhost',
+          port: Number(config.get<string>('DATABASE_PORT') || 5432),
+          username: config.get<string>('DATABASE_USER') || 'pmkiemke',
+          password: config.get<string>('DATABASE_PASSWORD') || 'pmkiemke',
+          database: config.get<string>('DATABASE_NAME') || 'pmkiemke',
+          entities,
+          synchronize,
+          logging: false,
+        };
+      },
     }),
     AuthModule,
     UsersModule,

@@ -25,5 +25,6 @@ npm run dev      # http://localhost:3000
 | `DATABASE_USER` | `pmkiemke` |
 | `DATABASE_PASSWORD` | `pmkiemke` |
 | `DATABASE_NAME` | `pmkiemke` |
+| `TYPEORM_SYNCHRONIZE` | `true` (`true`/`1`/`yes`/`on` = bật; `false`/`0`/`no`/`off` = tắt) |
 
-Schema tự tạo (`synchronize: true`) và seed khi bảng trống.
+Seed chạy khi bảng trống. Schema sync theo `TYPEORM_SYNCHRONIZE`.
