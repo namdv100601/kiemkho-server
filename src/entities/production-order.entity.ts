@@ -1,0 +1,55 @@
+import {
+  Column,
+  CreateDateColumn,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { Process } from './process.entity';
+import { Stage } from './stage.entity';
+
+@Entity('production_orders')
+export class ProductionOrder {
+  @PrimaryGeneratedColumn()
+  id!: number;
+
+  @Column({ type: 'varchar', unique: true })
+  code!: string;
+
+  @Column({ name: 'process_id', type: 'int' })
+  process_id!: number;
+
+  @Column({ name: 'product_name', type: 'varchar' })
+  product_name!: string;
+
+  @Column({ type: 'float', default: 0 })
+  quantity!: number;
+
+  @Column({ name: 'entry_date', type: 'varchar' })
+  entry_date!: string;
+
+  @Column({ name: 'parent_id', type: 'int', nullable: true })
+  parent_id!: number | null;
+
+  @Column({ name: 'stage_id', type: 'int', nullable: true })
+  stage_id!: number | null;
+
+  @Column({ type: 'varchar', default: 'active' })
+  status!: string;
+
+  @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
+  created_at!: Date;
+
+  @ManyToOne(() => Process)
+  @JoinColumn({ name: 'process_id' })
+  process!: Process;
+
+  @ManyToOne(() => Stage, { nullable: true })
+  @JoinColumn({ name: 'stage_id' })
+  stage!: Stage | null;
+
+  @ManyToOne(() => ProductionOrder, { nullable: true, onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'parent_id' })
+  parent!: ProductionOrder | null;
+}
