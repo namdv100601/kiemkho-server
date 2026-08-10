@@ -7,7 +7,8 @@ NestJS API (v2) + PostgreSQL (Docker). Cùng contract API với `server/` Expres
 ```bash
 cp .env.example .env
 npm install
-npm run db:up    # Postgres Docker
+npm run db:up    # Postgres Docker (local)
+npm run seed     # chỉ khi cần nạp dữ liệu mẫu (không chạy khi start/dev)
 npm run dev      # http://localhost:3000
 ```
 
@@ -25,6 +26,10 @@ npm run dev      # http://localhost:3000
 | `DATABASE_USER` | `pmkiemke` |
 | `DATABASE_PASSWORD` | `pmkiemke` |
 | `DATABASE_NAME` | `pmkiemke` |
-| `TYPEORM_SYNCHRONIZE` | `true` (`true`/`1`/`yes`/`on` = bật; `false`/`0`/`no`/`off` = tắt) |
+| `TYPEORM_SYNCHRONIZE` / `DATABASE_SYNC` | `true` (`true`/`1`/`yes`/`on` = bật; `false`/`0`/`no`/`off` = tắt) |
 
-Seed chạy khi bảng trống. Schema sync theo `TYPEORM_SYNCHRONIZE`.
+`npm run start` / `npm run dev` **không** tự seed. Chạy seed thủ công:
+
+```bash
+npm run seed
+```

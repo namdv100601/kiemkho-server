@@ -23,7 +23,9 @@ import { HealthController } from './health.controller';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
-        const syncRaw = config.get<string>('TYPEORM_SYNCHRONIZE');
+        // Ưu tiên TYPEORM_SYNCHRONIZE, fallback DATABASE_SYNC
+        const syncRaw =
+          config.get<string>('TYPEORM_SYNCHRONIZE') ?? config.get<string>('DATABASE_SYNC');
         const synchronize =
           syncRaw == null || syncRaw === ''
             ? true

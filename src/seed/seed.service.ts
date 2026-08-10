@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import * as bcrypt from 'bcryptjs';
 import { Repository } from 'typeorm';
@@ -26,7 +26,7 @@ function todayLocal() {
 }
 
 @Injectable()
-export class SeedService implements OnModuleInit {
+export class SeedService {
   private readonly logger = new Logger(SeedService.name);
 
   constructor(
@@ -43,10 +43,6 @@ export class SeedService implements OnModuleInit {
     @InjectRepository(ShiftReportLine) private readonly lines: Repository<ShiftReportLine>,
     @InjectRepository(Handover) private readonly handovers: Repository<Handover>
   ) {}
-
-  async onModuleInit() {
-    await this.run();
-  }
 
   private async stageId(name: string) {
     const row = await this.stages.findOne({ where: { name } });
