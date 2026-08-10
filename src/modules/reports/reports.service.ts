@@ -269,17 +269,29 @@ export class ReportsService {
     if (!query.month && !query.date) {
       throw new BadRequestException('Cần chọn Tháng hoặc Ngày để xuất');
     }
-    const monthKey = String(query.month || String(query.date).slice(0, 7));
+
+    // Khi xuất theo ngày: lấy tháng từ ngày (tránh lệch tháng trên form)
+    const dateKey = query.date ? String(query.date).slice(0, 10) : undefined;
+    const monthKey = String(
+      dateKey ? dateKey.slice(0, 7) : query.month || ''
+    );
+    if (!monthKey) {
+      throw new BadRequestException('Cần chọn Tháng hoặc Ngày để xuất');
+    }
 
     const qb = this.reports
       .createQueryBuilder('r')
-      .where(`to_char(r.report_date::date, 'YYYY-MM') = :month`, { month: monthKey })
       .orderBy('r.report_date', 'ASC')
       .addOrderBy('r.stage_id', 'ASC')
       .addOrderBy('r.shift', 'ASC')
       .addOrderBy('r.id', 'ASC');
+
+    if (dateKey) {
+      qb.where('r.report_date = :date', { date: dateKey });
+    } else {
+      qb.where(`to_char(r.report_date::date, 'YYYY-MM') = :month`, { month: monthKey });
+    }
     if (query.stage_id) qb.andWhere('r.stage_id = :stageId', { stageId: Number(query.stage_id) });
-    if (query.date) qb.andWhere('r.report_date = :date', { date: query.date });
 
     const reportIds = await qb.getMany();
     const lines: Parameters<typeof buildDailyWorkbook>[1] = [];
@@ -317,9 +329,10 @@ export class ReportsService {
       }
     }
 
+    const fileKey = dateKey || monthKey;
     return {
       buf: buildDailyWorkbook(monthKey, lines),
-      filename: `bao-cao-hang-ngay-${monthKey}.xlsx`,
+      filename: `bao-cao-hang-ngay-${fileKey}.xlsx`,
     };
   }
 

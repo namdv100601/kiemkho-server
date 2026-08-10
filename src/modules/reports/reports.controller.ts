@@ -49,7 +49,16 @@ export class ReportsController {
     return this.reports.monthly({ stage_id, month, date, shift });
   }
 
-  @Get('export/monthly.xlsx')
+  private sendExcel(res: Response | undefined, buf: Buffer, filename: string) {
+    res?.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    );
+    res?.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    return new StreamableFile(Buffer.from(buf));
+  }
+
+  @Get('export/monthly')
   @Roles('quan_ly', 'giam_doc')
   async exportMonthly(
     @Query('stage_id') stage_id?: string,
@@ -57,15 +66,21 @@ export class ReportsController {
     @Res({ passthrough: true }) res?: Response
   ) {
     const { buf, filename } = await this.reports.exportMonthly(stage_id, month);
-    res?.setHeader(
-      'Content-Type',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    );
-    res?.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    return new StreamableFile(buf);
+    return this.sendExcel(res, buf, filename);
   }
 
-  @Get('export/daily.xlsx')
+  /** Alias tương thích client/proxy cũ */
+  @Get('export/monthly.xlsx')
+  @Roles('quan_ly', 'giam_doc')
+  async exportMonthlyXlsx(
+    @Query('stage_id') stage_id?: string,
+    @Query('month') month?: string,
+    @Res({ passthrough: true }) res?: Response
+  ) {
+    return this.exportMonthly(stage_id, month, res);
+  }
+
+  @Get('export/daily')
   @Roles('quan_ly', 'giam_doc')
   async exportDaily(
     @Query('month') month?: string,
@@ -74,23 +89,30 @@ export class ReportsController {
     @Res({ passthrough: true }) res?: Response
   ) {
     const { buf, filename } = await this.reports.exportDaily({ month, stage_id, date });
-    res?.setHeader(
-      'Content-Type',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    );
-    res?.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    return new StreamableFile(buf);
+    return this.sendExcel(res, buf, filename);
+  }
+
+  /** Alias tương thích client/proxy cũ */
+  @Get('export/daily.xlsx')
+  @Roles('quan_ly', 'giam_doc')
+  async exportDailyXlsx(
+    @Query('month') month?: string,
+    @Query('stage_id') stage_id?: string,
+    @Query('date') date?: string,
+    @Res({ passthrough: true }) res?: Response
+  ) {
+    return this.exportDaily(month, stage_id, date, res);
+  }
+
+  @Get('template/entry')
+  async entryTemplate(@Res({ passthrough: true }) res: Response) {
+    const buf = this.reports.entryTemplateBuffer();
+    return this.sendExcel(res, buf, 'mau-nhap-lieu.xlsx');
   }
 
   @Get('template/entry.xlsx')
-  async entryTemplate(@Res({ passthrough: true }) res: Response) {
-    const buf = this.reports.entryTemplateBuffer();
-    res.setHeader(
-      'Content-Type',
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-    );
-    res.setHeader('Content-Disposition', 'attachment; filename="mau-nhap-lieu.xlsx"');
-    return new StreamableFile(buf);
+  async entryTemplateXlsx(@Res({ passthrough: true }) res: Response) {
+    return this.entryTemplate(res);
   }
 
   @Get(':id')
