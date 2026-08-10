@@ -20,6 +20,9 @@ export class Worker {
   @Column({ type: 'varchar', nullable: true })
   code!: string | null;
 
+  @Column({ name: 'job_title', type: 'varchar', nullable: true })
+  job_title!: string | null;
+
   @Column({ type: 'int', default: 1 })
   active!: number;
 

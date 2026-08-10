@@ -7,6 +7,7 @@
     "build": "nest build",
     "start": "node dist/main.js",
     "seed": "ts-node -r tsconfig-paths/register src/seed/run-seed.ts",
+    "db:migrate:worker-job-title": "ts-node -r tsconfig-paths/register src/migrations/add-worker-job-title.ts",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down"
   },
