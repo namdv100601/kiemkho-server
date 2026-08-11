@@ -39,7 +39,7 @@ export class ReportsController {
   }
 
   @Get('monthly')
-  @Roles('quan_ly', 'giam_doc')
+  @Roles('quan_ly', 'giam_doc', 'thong_ke')
   monthly(
     @Query('stage_id') stage_id?: string,
     @Query('month') month?: string,
@@ -59,7 +59,7 @@ export class ReportsController {
   }
 
   @Get('export/monthly')
-  @Roles('quan_ly', 'giam_doc')
+  @Roles('quan_ly', 'giam_doc', 'thong_ke')
   async exportMonthly(
     @Query('stage_id') stage_id?: string,
     @Query('month') month?: string,
@@ -71,7 +71,7 @@ export class ReportsController {
 
   /** Alias tương thích client/proxy cũ */
   @Get('export/monthly.xlsx')
-  @Roles('quan_ly', 'giam_doc')
+  @Roles('quan_ly', 'giam_doc', 'thong_ke')
   async exportMonthlyXlsx(
     @Query('stage_id') stage_id?: string,
     @Query('month') month?: string,
@@ -81,7 +81,7 @@ export class ReportsController {
   }
 
   @Get('export/daily')
-  @Roles('quan_ly', 'giam_doc')
+  @Roles('quan_ly', 'giam_doc', 'thong_ke')
   async exportDaily(
     @Query('month') month?: string,
     @Query('stage_id') stage_id?: string,
@@ -94,7 +94,7 @@ export class ReportsController {
 
   /** Alias tương thích client/proxy cũ */
   @Get('export/daily.xlsx')
-  @Roles('quan_ly', 'giam_doc')
+  @Roles('quan_ly', 'giam_doc', 'thong_ke')
   async exportDailyXlsx(
     @Query('month') month?: string,
     @Query('stage_id') stage_id?: string,

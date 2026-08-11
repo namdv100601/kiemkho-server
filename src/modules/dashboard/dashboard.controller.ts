@@ -11,7 +11,7 @@ import { Process, ProductionOrder, ShiftReport, Stage } from '../../entities';
 @ApiBearerAuth('JWT')
 @Controller('api/dashboard')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('quan_ly', 'giam_doc')
+@Roles('quan_ly', 'giam_doc', 'thong_ke')
 export class DashboardController {
   constructor(
     @InjectRepository(Stage) private readonly stages: Repository<Stage>,

@@ -1,0 +1,14 @@
+[
+  {
+    "username": "thongke",
+    "password": "123456",
+    "full_name": "Thống kê mẫu",
+    "role": "thong_ke"
+  },
+  {
+    "username": "thongke2",
+    "password": "123456",
+    "full_name": "Nhân viên thống kê",
+    "role": "thong_ke"
+  }
+]

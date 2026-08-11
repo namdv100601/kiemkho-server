@@ -21,7 +21,7 @@ import { CurrentUser } from '../../common/auth/current-user.decorator';
 import type { AuthUser, Role } from '../../common/auth/auth.types';
 import { User } from '../../entities';
 
-const ROLES: Role[] = ['cong_nhan', 'quan_ly', 'giam_doc'];
+const ROLES: Role[] = ['cong_nhan', 'quan_ly', 'giam_doc', 'thong_ke'];
 
 function publicUser(row: User) {
   return {

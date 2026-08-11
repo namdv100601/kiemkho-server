@@ -68,6 +68,7 @@ export class SeedService {
       ['congnhan', 'Công nhân mẫu', 'cong_nhan'],
       ['quanly', 'Quản lý mẫu', 'quan_ly'],
       ['giamdoc', 'Giám đốc mẫu', 'giam_doc'],
+      ['thongke', 'Thống kê mẫu', 'thong_ke'],
     ];
     const stageUsers: [string, string][] = [
       ['in', 'Nhân viên khâu In'],
@@ -100,7 +101,7 @@ export class SeedService {
       }
     }
     this.logger.log(
-      'Users ready: congnhan, quanly, giamdoc, in, kcs, boi, be, xa, song (password: 123456)'
+      'Users ready: congnhan, quanly, giamdoc, thongke, in, kcs, boi, be, xa, song (password: 123456)'
     );
 
     if ((await this.stages.count()) === 0) {

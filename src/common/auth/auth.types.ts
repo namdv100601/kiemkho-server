@@ -1,4 +1,4 @@
-export type Role = 'cong_nhan' | 'quan_ly' | 'giam_doc';
+export type Role = 'cong_nhan' | 'quan_ly' | 'giam_doc' | 'thong_ke';
 
 export interface AuthUser {
   id: number;
