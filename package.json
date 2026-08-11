@@ -5,9 +5,11 @@
   "scripts": {
     "dev": "nest start --watch",
     "build": "nest build",
+    "test": "npm run build && node --test tests/orders.controller.test.js",
     "start": "node dist/main.js",
     "seed": "ts-node -r tsconfig-paths/register src/seed/run-seed.ts",
     "db:migrate:worker-job-title": "ts-node -r tsconfig-paths/register src/migrations/add-worker-job-title.ts",
+    "db:migrate:supply-orders": "ts-node -r tsconfig-paths/register src/migrations/add-supply-order-fields.ts",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down"
   },

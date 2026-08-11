@@ -227,6 +227,8 @@ export class SeedService {
               entry_date: entryDate,
               parent_id: parent.id,
               stage_id: await this.stageId(stageName),
+              supply_type: 'nhap_lenh',
+              supplier_name: null,
               status: 'active',
             })
           );

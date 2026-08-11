@@ -13,7 +13,7 @@ import {
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { InjectRepository } from '@nestjs/typeorm';
-import { DataSource, Repository } from 'typeorm';
+import { IsNull, Repository } from 'typeorm';
 import { JwtAuthGuard } from '../../common/auth/jwt-auth.guard';
 import { Roles } from '../../common/auth/roles.decorator';
 import { RolesGuard } from '../../common/auth/roles.guard';
@@ -26,8 +26,7 @@ import { ProductionOrder, Stage } from '../../entities';
 export class OrdersController {
   constructor(
     @InjectRepository(ProductionOrder) private readonly orders: Repository<ProductionOrder>,
-    @InjectRepository(Stage) private readonly stages: Repository<Stage>,
-    private readonly dataSource: DataSource
+    @InjectRepository(Stage) private readonly stages: Repository<Stage>
   ) {}
 
   private async getOrder(id: number) {
@@ -47,13 +46,32 @@ export class OrdersController {
   }
 
   @Get()
-  async list(@Query('parent_only') parentOnly?: string) {
+  async list(
+    @Query('parent_only') parentOnly?: string,
+    @Query('supply_only') supplyOnly?: string,
+    @Query('parent_id') parentId?: string,
+    @Query('status') status?: string
+  ) {
     const qb = this.orders
       .createQueryBuilder('o')
       .leftJoinAndSelect('o.process', 'p')
       .leftJoinAndSelect('o.stage', 's')
       .orderBy('o.id', 'DESC');
     if (parentOnly === '1') qb.andWhere('o.parent_id IS NULL');
+    if (supplyOnly === '1') qb.andWhere('o.parent_id IS NOT NULL');
+    if (parentId != null && parentId !== '') {
+      const parsedParentId = Number(parentId);
+      if (!Number.isInteger(parsedParentId)) {
+        throw new BadRequestException('Lệnh sản xuất không hợp lệ');
+      }
+      qb.andWhere('o.parent_id = :parentId', { parentId: parsedParentId });
+    }
+    if (status != null && status !== '') {
+      if (!['active', 'inactive'].includes(status)) {
+        throw new BadRequestException('Trạng thái không hợp lệ');
+      }
+      qb.andWhere('o.status = :status', { status });
+    }
     const rows = await qb.getMany();
     return rows.map((o) => {
       const { process, stage, ...rest } = o;
@@ -93,51 +111,93 @@ export class OrdersController {
       product_name?: string;
       quantity?: number;
       entry_date?: string;
-      create_supply_orders?: boolean;
     }
   ) {
-    const { code, process_id, product_name, quantity, entry_date, create_supply_orders } =
-      body || {};
+    const { code, process_id, product_name, quantity, entry_date } = body || {};
     if (!code || !process_id || !product_name || !entry_date) {
       throw new BadRequestException('Thiếu thông tin lệnh sản xuất');
     }
     try {
-      const id = await this.dataSource.transaction(async (manager) => {
-        const parent = await manager.save(
-          manager.create(ProductionOrder, {
-            code,
-            process_id,
-            product_name,
-            quantity: quantity ?? 0,
-            entry_date,
-            parent_id: null,
-            stage_id: null,
-            status: 'active',
-          })
-        );
-        if (create_supply_orders) {
-          const supplies = await manager.find(Stage, {
-            where: { type: 'supply', active: 1 },
-          });
-          for (const s of supplies) {
-            await manager.save(
-              manager.create(ProductionOrder, {
-                code: `${code}-${s.name}`,
-                process_id,
-                product_name,
-                quantity: quantity ?? 0,
-                entry_date,
-                parent_id: parent.id,
-                stage_id: s.id,
-                status: 'active',
-              })
-            );
-          }
-        }
-        return parent.id;
-      });
-      const children = await this.orders.find({ where: { parent_id: id } });
-      return { ...(await this.getOrder(id)), children };
+      const parent = await this.orders.save(
+        this.orders.create({
+          code: code.trim(),
+          process_id,
+          product_name: product_name.trim(),
+          quantity: quantity ?? 0,
+          entry_date,
+          parent_id: null,
+          stage_id: null,
+          supply_type: null,
+          supplier_name: null,
+          status: 'active',
+        })
+      );
+      return { ...(await this.getOrder(parent.id)), children: [] };
+    } catch (e: unknown) {
+      throw new BadRequestException((e as Error).message);
+    }
+  }
+
+  @Post('supply')
+  @Roles('quan_ly')
+  async createSupply(
+    @Body()
+    body: {
+      code?: string;
+      parent_id?: number;
+      stage_id?: number;
+      product_name?: string;
+      quantity?: number;
+      entry_date?: string;
+      supply_type?: 'nhap_lenh' | 'mua_ngoai';
+      supplier_name?: string;
+    }
+  ) {
+    const {
+      code,
+      parent_id,
+      stage_id,
+      product_name,
+      quantity,
+      entry_date,
+      supply_type = 'nhap_lenh',
+      supplier_name,
+    } = body || {};
+    if (!code || !parent_id || !stage_id || !product_name || !entry_date) {
+      throw new BadRequestException('Thiếu thông tin lệnh cung cấp');
+    }
+    if (!['nhap_lenh', 'mua_ngoai'].includes(supply_type)) {
+      throw new BadRequestException('Loại lệnh cung cấp không hợp lệ');
+    }
+    if (supply_type === 'mua_ngoai' && !supplier_name?.trim()) {
+      throw new BadRequestException('Nhà cung cấp là bắt buộc khi mua ngoài');
+    }
+
+    const [parent, stage] = await Promise.all([
+      this.orders.findOne({ where: { id: parent_id, parent_id: IsNull() } }),
+      this.stages.findOne({ where: { id: stage_id } }),
+    ]);
+    if (!parent) throw new BadRequestException('Lệnh sản xuất không tồn tại');
+    if (!stage || stage.type !== 'supply' || stage.active !== 1) {
+      throw new BadRequestException('Khâu cung cấp không hợp lệ');
+    }
+
+    try {
+      const row = await this.orders.save(
+        this.orders.create({
+          code: code.trim(),
+          process_id: parent.process_id,
+          product_name: product_name.trim(),
+          quantity: quantity ?? 0,
+          entry_date,
+          parent_id: parent.id,
+          stage_id: stage.id,
+          supply_type,
+          supplier_name: supply_type === 'mua_ngoai' ? supplier_name!.trim() : null,
+          status: 'active',
+        })
+      );
+      return this.getOrder(row.id);
     } catch (e: unknown) {
       throw new BadRequestException((e as Error).message);
     }
@@ -154,7 +214,7 @@ export class OrdersController {
       product_name?: string;
       quantity?: number;
       entry_date?: string;
-      status?: string;
+      status?: 'active' | 'inactive';
     }
   ) {
     const id = Number(idParam);
@@ -165,7 +225,12 @@ export class OrdersController {
     if (body.product_name != null) row.product_name = body.product_name;
     if (body.quantity != null) row.quantity = body.quantity;
     if (body.entry_date != null) row.entry_date = body.entry_date;
-    if (body.status != null) row.status = body.status;
+    if (body.status != null) {
+      if (!['active', 'inactive'].includes(body.status)) {
+        throw new BadRequestException('Trạng thái không hợp lệ');
+      }
+      row.status = body.status;
+    }
     await this.orders.save(row);
     return this.getOrder(id);
   }

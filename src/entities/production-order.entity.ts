@@ -35,8 +35,14 @@ export class ProductionOrder {
   @Column({ name: 'stage_id', type: 'int', nullable: true })
   stage_id!: number | null;
 
+  @Column({ name: 'supply_type', type: 'varchar', nullable: true })
+  supply_type!: 'nhap_lenh' | 'mua_ngoai' | null;
+
+  @Column({ name: 'supplier_name', type: 'varchar', nullable: true })
+  supplier_name!: string | null;
+
   @Column({ type: 'varchar', default: 'active' })
-  status!: string;
+  status!: 'active' | 'inactive';
 
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   created_at!: Date;
