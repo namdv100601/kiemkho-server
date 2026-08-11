@@ -8,6 +8,8 @@ import { StagesModule } from './modules/stages/stages.module';
 import { ProcessesModule } from './modules/processes/processes.module';
 import { OrdersModule } from './modules/orders/orders.module';
 import { MaterialsModule } from './modules/materials/materials.module';
+import { ProductsModule } from './modules/products/products.module';
+import { UnitsModule } from './modules/units/units.module';
 import { WorkersModule } from './modules/workers/workers.module';
 import { NormsModule } from './modules/norms/norms.module';
 import { ReportsModule } from './modules/reports/reports.module';
@@ -50,6 +52,8 @@ import { HealthController } from './health.controller';
     ProcessesModule,
     OrdersModule,
     MaterialsModule,
+    ProductsModule,
+    UnitsModule,
     WorkersModule,
     NormsModule,
     ReportsModule,

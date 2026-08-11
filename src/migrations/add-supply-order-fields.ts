@@ -18,6 +18,15 @@ async function run() {
     await dataSource.query(
       "UPDATE production_orders SET supply_type = 'nhap_lenh' WHERE parent_id IS NOT NULL AND supply_type IS NULL"
     );
+    await dataSource.query(
+      'ALTER TABLE production_orders ADD COLUMN IF NOT EXISTS parent_ids int[]'
+    );
+    await dataSource.query(`
+      UPDATE production_orders
+      SET parent_ids = ARRAY[parent_id]
+      WHERE parent_id IS NOT NULL
+        AND (parent_ids IS NULL OR cardinality(parent_ids) = 0)
+    `);
     console.log('Supply order fields migration completed');
   } finally {
     await app.close();

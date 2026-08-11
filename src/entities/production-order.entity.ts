@@ -32,6 +32,9 @@ export class ProductionOrder {
   @Column({ name: 'parent_id', type: 'int', nullable: true })
   parent_id!: number | null;
 
+  @Column({ name: 'parent_ids', type: 'int', array: true, nullable: true })
+  parent_ids!: number[] | null;
+
   @Column({ name: 'stage_id', type: 'int', nullable: true })
   stage_id!: number | null;
 

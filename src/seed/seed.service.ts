@@ -8,6 +8,7 @@ import {
   Material,
   Process,
   ProcessStage,
+  Product,
   ProductionOrder,
   ShiftReport,
   ShiftReportLine,
@@ -37,6 +38,7 @@ export class SeedService {
     @InjectRepository(Worker) private readonly workers: Repository<Worker>,
     @InjectRepository(StageWorker) private readonly stageWorkers: Repository<StageWorker>,
     @InjectRepository(Material) private readonly materials: Repository<Material>,
+    @InjectRepository(Product) private readonly products: Repository<Product>,
     @InjectRepository(ProductionOrder) private readonly orders: Repository<ProductionOrder>,
     @InjectRepository(EntryTemplate) private readonly templates: Repository<EntryTemplate>,
     @InjectRepository(ShiftReport) private readonly reports: Repository<ShiftReport>,
@@ -199,6 +201,27 @@ export class SeedService {
       this.logger.log('Seeded materials');
     }
 
+    if ((await this.products.count()) === 0) {
+      const items: [string, string, string][] = [
+        ['In', 'Hop bia', 'cái'],
+        ['In', 'Hop bia A', 'cái'],
+        ['KCS', 'Hop bia', 'cái'],
+        ['Bồi', 'Hop bia', 'cái'],
+        ['Bế', 'Hop bia', 'cái'],
+        ['Bế', 'Duplex 230/825', 'tấm'],
+      ];
+      for (const [stageName, name, unit] of items) {
+        await this.products.save(
+          this.products.create({
+            stage_id: await this.stageId(stageName),
+            name,
+            unit,
+          })
+        );
+      }
+      this.logger.log('Seeded products');
+    }
+
     if ((await this.orders.count()) === 0) {
       const process = await this.processes.find({ order: { id: 'ASC' }, take: 1 });
       const processId = process[0].id;
@@ -226,6 +249,7 @@ export class SeedService {
               quantity: 1000,
               entry_date: entryDate,
               parent_id: parent.id,
+              parent_ids: [parent.id],
               stage_id: await this.stageId(stageName),
               supply_type: 'nhap_lenh',
               supplier_name: null,

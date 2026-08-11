@@ -3,6 +3,8 @@ import { Stage } from './stage.entity';
 import { Process, ProcessStage } from './process.entity';
 import { ProductionOrder } from './production-order.entity';
 import { Material } from './material.entity';
+import { Product } from './product.entity';
+import { Unit } from './unit.entity';
 import { Worker, StageWorker } from './worker.entity';
 import { Norm } from './norm.entity';
 import { ShiftReport, ShiftReportLine, Handover } from './shift-report.entity';
@@ -15,6 +17,8 @@ export const entities = [
   ProcessStage,
   ProductionOrder,
   Material,
+  Product,
+  Unit,
   Worker,
   StageWorker,
   Norm,
@@ -31,6 +35,8 @@ export {
   ProcessStage,
   ProductionOrder,
   Material,
+  Product,
+  Unit,
   Worker,
   StageWorker,
   Norm,

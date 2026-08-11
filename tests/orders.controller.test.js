@@ -6,6 +6,22 @@ const { OrdersController } = require('../dist/modules/orders/orders.controller')
 function orderRepository() {
   const saved = [];
   const query = { clauses: [] };
+  const parentsById = {
+    99: {
+      id: 99,
+      code: 'LSX-99',
+      process_id: 7,
+      parent_id: null,
+      status: 'active',
+    },
+    100: {
+      id: 100,
+      code: 'LSX-100',
+      process_id: 7,
+      parent_id: null,
+      status: 'active',
+    },
+  };
   const queryBuilder = {
     leftJoinAndSelect() {
       return this;
@@ -39,16 +55,12 @@ function orderRepository() {
       saved.push(row);
       return row;
     },
+    async find({ where }) {
+      const ids = where?.id?._value || [];
+      return ids.map((id) => parentsById[id]).filter(Boolean);
+    },
     async findOne({ where }) {
-      if (where.id === 99) {
-        return {
-          id: 99,
-          code: 'LSX-99',
-          process_id: 7,
-          parent_id: null,
-          status: 'active',
-        };
-      }
+      if (parentsById[where.id]) return parentsById[where.id];
       return saved.find((row) => row.id === where.id) || null;
     },
     createQueryBuilder() {
@@ -102,8 +114,27 @@ describe('OrdersController', () => {
 
     assert.equal(orders.saved.length, 1);
     assert.equal(orders.saved[0].parent_id, 99);
+    assert.deepEqual(orders.saved[0].parent_ids, [99]);
     assert.equal(orders.saved[0].process_id, 7);
     assert.equal(orders.saved[0].supplier_name, null);
+  });
+
+  it('tạo lệnh cung cấp gắn nhiều lệnh sản xuất', async () => {
+    const orders = orderRepository();
+    const controller = new OrdersController(orders, stageRepository());
+
+    await controller.createSupply({
+      code: 'LCC-MULTI',
+      parent_ids: [99, 100],
+      stage_id: 5,
+      product_name: 'Giấy cuộn',
+      quantity: 20,
+      entry_date: '2026-08-11',
+      supply_type: 'nhap_lenh',
+    });
+
+    assert.deepEqual(orders.saved[0].parent_ids, [99, 100]);
+    assert.equal(orders.saved[0].parent_id, 99);
   });
 
   it('bắt buộc nhà cung cấp với lệnh Mua ngoài', async () => {
@@ -140,6 +171,44 @@ describe('OrdersController', () => {
     assert.equal(orders.saved[0].supplier_name, 'Công ty Giấy A');
   });
 
+  it('cập nhật lệnh cung cấp với nhiều lệnh sản xuất', async () => {
+    const orders = orderRepository();
+    const row = {
+      id: 1,
+      code: 'LCC-01',
+      process_id: 7,
+      product_name: 'Giấy cũ',
+      quantity: 10,
+      entry_date: '2026-08-01',
+      parent_id: 99,
+      parent_ids: [99],
+      stage_id: 5,
+      supply_type: 'nhap_lenh',
+      supplier_name: null,
+      status: 'active',
+    };
+    orders.saved.push(row);
+    const controller = new OrdersController(orders, stageRepository());
+
+    await controller.update('1', {
+      code: 'LCC-01B',
+      parent_ids: [99, 100],
+      stage_id: 5,
+      product_name: 'Giấy mới',
+      quantity: 30,
+      entry_date: '2026-08-11',
+      supply_type: 'mua_ngoai',
+      supplier_name: 'NCC A',
+    });
+
+    assert.equal(row.code, 'LCC-01B');
+    assert.equal(row.product_name, 'Giấy mới');
+    assert.deepEqual(row.parent_ids, [99, 100]);
+    assert.equal(row.parent_id, 99);
+    assert.equal(row.supply_type, 'mua_ngoai');
+    assert.equal(row.supplier_name, 'NCC A');
+  });
+
   it('bật tắt trạng thái lệnh sản xuất', async () => {
     const orders = orderRepository();
     const row = {
@@ -166,7 +235,9 @@ describe('OrdersController', () => {
 
     assert.ok(orders.query.clauses.includes('o.parent_id IS NULL'));
     assert.ok(orders.query.clauses.includes('o.parent_id IS NOT NULL'));
-    assert.ok(orders.query.clauses.includes('o.parent_id = :parentId'));
+    assert.ok(
+      orders.query.clauses.includes('(o.parent_id = :parentId OR :parentId = ANY(o.parent_ids))')
+    );
     assert.ok(orders.query.clauses.includes('o.status = :status'));
   });
 });
