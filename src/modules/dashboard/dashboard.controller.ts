@@ -29,7 +29,7 @@ export class DashboardController {
       processes: await this.processes.count(),
       orders: await this.orders
         .createQueryBuilder('o')
-        .where('o.parent_id IS NULL')
+        .where('o.supply_type IS NULL')
         .getCount(),
       reports_today: await this.reports.count({ where: { report_date: date } }),
     };

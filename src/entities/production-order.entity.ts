@@ -17,8 +17,8 @@ export class ProductionOrder {
   @Column({ type: 'varchar', unique: true })
   code!: string;
 
-  @Column({ name: 'process_id', type: 'int' })
-  process_id!: number;
+  @Column({ name: 'process_id', type: 'int', nullable: true })
+  process_id!: number | null;
 
   @Column({ name: 'product_name', type: 'varchar' })
   product_name!: string;
@@ -50,9 +50,9 @@ export class ProductionOrder {
   @CreateDateColumn({ name: 'created_at', type: 'timestamptz' })
   created_at!: Date;
 
-  @ManyToOne(() => Process)
+  @ManyToOne(() => Process, { nullable: true })
   @JoinColumn({ name: 'process_id' })
-  process!: Process;
+  process!: Process | null;
 
   @ManyToOne(() => Stage, { nullable: true })
   @JoinColumn({ name: 'stage_id' })

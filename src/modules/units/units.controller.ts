@@ -36,17 +36,20 @@ export class UnitsController {
 
   @Post()
   @Roles('quan_ly')
-  async create(@Body() body: { name?: string; sort_order?: number }) {
+  async create(@Body() body: { name?: string }) {
     const name = body?.name?.trim();
     if (!name) throw new BadRequestException('Thiếu tên đơn vị');
     const exists = await this.units.findOne({ where: { name } });
     if (exists) throw new BadRequestException('Đơn vị đã tồn tại');
-    return this.units.save(this.units.create({ name, sort_order: body.sort_order ?? 0 }));
+    const maxOrder = await this.units.maximum('sort_order');
+    return this.units.save(
+      this.units.create({ name, sort_order: (maxOrder ?? -1) + 1 })
+    );
   }
 
   @Put(':id')
   @Roles('quan_ly')
-  async update(@Param('id') id: string, @Body() body: { name?: string; sort_order?: number }) {
+  async update(@Param('id') id: string, @Body() body: { name?: string }) {
     const row = await this.units.findOne({ where: { id: Number(id) } });
     if (!row) throw new NotFoundException('Không tìm thấy');
     const oldName = row.name;
@@ -57,7 +60,6 @@ export class UnitsController {
       if (other && other.id !== row.id) throw new BadRequestException('Đơn vị đã tồn tại');
       row.name = name;
     }
-    if (body.sort_order != null) row.sort_order = body.sort_order;
     const saved = await this.units.save(row);
     // Đơn vị được lưu dạng text ở NVL / sản phẩm nên phải đổi tên theo
     if (saved.name !== oldName) {

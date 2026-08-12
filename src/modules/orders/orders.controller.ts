@@ -78,8 +78,8 @@ export class OrdersController {
       .leftJoinAndSelect('o.process', 'p')
       .leftJoinAndSelect('o.stage', 's')
       .orderBy('o.id', 'DESC');
-    if (parentOnly === '1') qb.andWhere('o.parent_id IS NULL');
-    if (supplyOnly === '1') qb.andWhere('o.parent_id IS NOT NULL');
+    if (parentOnly === '1') qb.andWhere('o.supply_type IS NULL');
+    if (supplyOnly === '1') qb.andWhere('o.supply_type IS NOT NULL');
     if (parentId != null && parentId !== '') {
       const parsedParentId = Number(parentId);
       if (!Number.isInteger(parsedParentId)) {
@@ -186,7 +186,7 @@ export class OrdersController {
           .filter((id) => Number.isInteger(id) && id > 0)
       )
     );
-    if (!code || !parentIds.length || !stage_id || !product_name || !entry_date) {
+    if (!code || !stage_id || !product_name || !entry_date) {
       throw new BadRequestException('Thiếu thông tin lệnh cung cấp');
     }
     if (!['nhap_lenh', 'mua_ngoai'].includes(supply_type)) {
@@ -197,7 +197,9 @@ export class OrdersController {
     }
 
     const [parents, stage] = await Promise.all([
-      this.orders.find({ where: { id: In(parentIds), parent_id: IsNull() } }),
+      parentIds.length
+        ? this.orders.find({ where: { id: In(parentIds), supply_type: IsNull() } })
+        : Promise.resolve([] as ProductionOrder[]),
       this.stages.findOne({ where: { id: stage_id } }),
     ]);
     if (parents.length !== parentIds.length) {
@@ -208,18 +210,18 @@ export class OrdersController {
     }
 
     const primaryParent =
-      parents.find((parent) => parent.id === parentIds[0]) || parents[0];
+      parents.find((parent) => parent.id === parentIds[0]) || parents[0] || null;
 
     try {
       const row = await this.orders.save(
         this.orders.create({
           code: code.trim(),
-          process_id: primaryParent.process_id,
+          process_id: primaryParent?.process_id ?? null,
           product_name: product_name.trim(),
           quantity: quantity ?? 0,
           entry_date,
-          parent_id: primaryParent.id,
-          parent_ids: parentIds,
+          parent_id: primaryParent?.id ?? null,
+          parent_ids: parentIds.length ? parentIds : null,
           stage_id: stage.id,
           supply_type,
           supplier_name: supply_type === 'mua_ngoai' ? supplier_name!.trim() : null,
@@ -254,7 +256,7 @@ export class OrdersController {
     const id = Number(idParam);
     const row = await this.orders.findOne({ where: { id } });
     if (!row) throw new NotFoundException('Không tìm thấy');
-    const isSupply = row.parent_id != null;
+    const isSupply = row.supply_type != null;
 
     if (body.code != null) row.code = body.code.trim();
     if (body.product_name != null) row.product_name = body.product_name.trim();
@@ -270,25 +272,27 @@ export class OrdersController {
     if (!isSupply) {
       if (body.process_id != null) row.process_id = body.process_id;
     } else {
+      const parentIdsTouched = body.parent_ids !== undefined || body.parent_id !== undefined;
       const parentIds = Array.from(
         new Set(
-          (body.parent_ids?.length
-            ? body.parent_ids
-            : body.parent_id != null
-              ? [body.parent_id]
-              : this.normalizeParentIds(row)
+          (parentIdsTouched
+            ? body.parent_ids?.length
+              ? body.parent_ids
+              : body.parent_id != null
+                ? [body.parent_id]
+                : []
+            : this.normalizeParentIds(row)
           )
             .map(Number)
             .filter((parentId) => Number.isInteger(parentId) && parentId > 0)
         )
       );
-      if (!parentIds.length) {
-        throw new BadRequestException('Chọn ít nhất một lệnh sản xuất');
-      }
 
-      const parents = await this.orders.find({
-        where: { id: In(parentIds), parent_id: IsNull() },
-      });
+      const parents = parentIds.length
+        ? await this.orders.find({
+            where: { id: In(parentIds), supply_type: IsNull() },
+          })
+        : [];
       if (parents.length !== parentIds.length) {
         throw new BadRequestException('Một hoặc nhiều lệnh sản xuất không tồn tại');
       }
@@ -313,10 +317,10 @@ export class OrdersController {
       }
 
       const primaryParent =
-        parents.find((parent) => parent.id === parentIds[0]) || parents[0];
-      row.parent_id = primaryParent.id;
-      row.parent_ids = parentIds;
-      row.process_id = primaryParent.process_id;
+        parents.find((parent) => parent.id === parentIds[0]) || parents[0] || null;
+      row.parent_id = primaryParent?.id ?? null;
+      row.parent_ids = parentIds.length ? parentIds : null;
+      row.process_id = primaryParent?.process_id ?? null;
       row.stage_id = stage.id;
       row.supply_type = supplyType;
       row.supplier_name = supplyType === 'mua_ngoai' ? supplierName : null;

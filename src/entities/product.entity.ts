@@ -14,8 +14,9 @@ export class Product {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column({ name: 'stage_id', type: 'int' })
-  stage_id!: number;
+  /** null = áp dụng cho toàn bộ khâu */
+  @Column({ name: 'stage_id', type: 'int', nullable: true })
+  stage_id!: number | null;
 
   @Column({ type: 'varchar' })
   name!: string;
@@ -23,7 +24,7 @@ export class Product {
   @Column({ type: 'varchar', nullable: true })
   unit!: string | null;
 
-  @ManyToOne(() => Stage, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Stage, { nullable: true, onDelete: 'SET NULL' })
   @JoinColumn({ name: 'stage_id' })
-  stage!: Stage;
+  stage!: Stage | null;
 }

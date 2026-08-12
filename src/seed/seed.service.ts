@@ -202,18 +202,15 @@ export class SeedService {
     }
 
     if ((await this.products.count()) === 0) {
-      const items: [string, string, string][] = [
-        ['In', 'Hop bia', 'cái'],
-        ['In', 'Hop bia A', 'cái'],
-        ['KCS', 'Hop bia', 'cái'],
-        ['Bồi', 'Hop bia', 'cái'],
-        ['Bế', 'Hop bia', 'cái'],
+      const items: [string | null, string, string][] = [
+        [null, 'Hop bia', 'cái'],
+        [null, 'Hop bia A', 'cái'],
         ['Bế', 'Duplex 230/825', 'tấm'],
       ];
       for (const [stageName, name, unit] of items) {
         await this.products.save(
           this.products.create({
-            stage_id: await this.stageId(stageName),
+            stage_id: stageName ? await this.stageId(stageName) : null,
             name,
             unit,
           })
