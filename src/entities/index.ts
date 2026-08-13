@@ -9,6 +9,7 @@ import { Worker, StageWorker } from './worker.entity';
 import { Norm } from './norm.entity';
 import { ShiftReport, ShiftReportLine, Handover } from './shift-report.entity';
 import { EntryTemplate } from './entry-template.entity';
+import { StageWorkOrder } from './stage-work-order.entity';
 
 export const entities = [
   User,
@@ -26,6 +27,7 @@ export const entities = [
   ShiftReportLine,
   Handover,
   EntryTemplate,
+  StageWorkOrder,
 ];
 
 export {
@@ -44,4 +46,5 @@ export {
   ShiftReportLine,
   Handover,
   EntryTemplate,
+  StageWorkOrder,
 };

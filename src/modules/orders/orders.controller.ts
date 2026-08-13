@@ -124,12 +124,52 @@ export class OrdersController {
       product_name?: string;
       quantity?: number;
       entry_date?: string;
+      children?: Array<{
+        code?: string;
+        stage_id?: number;
+        product_name?: string;
+        quantity?: number;
+        entry_date?: string;
+        supply_type?: 'nhap_lenh' | 'mua_ngoai';
+        supplier_name?: string;
+      }>;
     }
   ) {
-    const { code, process_id, product_name, quantity, entry_date } = body || {};
+    const { code, process_id, product_name, quantity, entry_date, children } = body || {};
     if (!code || !process_id || !product_name || !entry_date) {
       throw new BadRequestException('Thiếu thông tin lệnh sản xuất');
     }
+
+    const childInputs = Array.isArray(children) ? children : [];
+    if (childInputs.length) {
+      const stageIds = childInputs.map((child) => Number(child.stage_id));
+      if (stageIds.some((id) => !Number.isInteger(id) || id <= 0)) {
+        throw new BadRequestException('Khâu cung cấp không hợp lệ');
+      }
+      if (new Set(stageIds).size !== stageIds.length) {
+        throw new BadRequestException('Mỗi khâu cung cấp chỉ tạo một lệnh');
+      }
+      for (const child of childInputs) {
+        if (!child.code?.trim() || !child.product_name?.trim()) {
+          throw new BadRequestException('Thiếu mã lệnh hoặc tên sản phẩm khâu cung cấp');
+        }
+        const supplyType = child.supply_type ?? 'nhap_lenh';
+        if (!['nhap_lenh', 'mua_ngoai'].includes(supplyType)) {
+          throw new BadRequestException('Loại lệnh cung cấp không hợp lệ');
+        }
+        if (supplyType === 'mua_ngoai' && !child.supplier_name?.trim()) {
+          throw new BadRequestException('Nhà cung cấp là bắt buộc khi mua ngoài');
+        }
+      }
+      const supplyStages = await this.stages.find({ where: { id: In(stageIds) } });
+      if (supplyStages.length !== stageIds.length) {
+        throw new BadRequestException('Khâu cung cấp không tồn tại');
+      }
+      if (supplyStages.some((stage) => stage.type !== 'supply' || stage.active !== 1)) {
+        throw new BadRequestException('Khâu cung cấp không hợp lệ');
+      }
+    }
+
     try {
       const parent = await this.orders.save(
         this.orders.create({
@@ -146,8 +186,29 @@ export class OrdersController {
           status: 'active',
         })
       );
-      return { ...(await this.getOrder(parent.id)), children: [] };
+
+      for (const child of childInputs) {
+        const supplyType = child.supply_type ?? 'nhap_lenh';
+        await this.orders.save(
+          this.orders.create({
+            code: child.code!.trim(),
+            process_id,
+            product_name: child.product_name!.trim(),
+            quantity: child.quantity ?? quantity ?? 0,
+            entry_date: child.entry_date || entry_date,
+            parent_id: parent.id,
+            parent_ids: [parent.id],
+            stage_id: Number(child.stage_id),
+            supply_type: supplyType,
+            supplier_name: supplyType === 'mua_ngoai' ? child.supplier_name!.trim() : null,
+            status: 'active',
+          })
+        );
+      }
+
+      return this.one(String(parent.id));
     } catch (e: unknown) {
+      if (e instanceof BadRequestException || e instanceof NotFoundException) throw e;
       throw new BadRequestException((e as Error).message);
     }
   }

@@ -11,7 +11,11 @@
     "db:migrate:worker-job-title": "ts-node -r tsconfig-paths/register src/migrations/add-worker-job-title.ts",
     "db:migrate:supply-orders": "ts-node -r tsconfig-paths/register src/migrations/add-supply-order-fields.ts",
     "db:up": "docker compose up -d",
-    "db:down": "docker compose down"
+    "db:down": "docker compose down",
+    "templates:prepare-xa": "node scripts/prepare-xa-template.mjs",
+    "templates:prepare-stages": "node scripts/prepare-stage-templates.mjs",
+    "templates:prepare-kcs": "node scripts/prepare-kcs-template.mjs",
+    "templates:prepare-boi": "node scripts/prepare-boi-template.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^11.1.28",
@@ -25,10 +29,13 @@
     "bcryptjs": "^2.4.3",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
+    "docx": "^9.7.1",
+    "docxtemplater": "^3.69.3",
     "js-yaml": "5.2.3",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "pg": "^8.16.3",
+    "pizzip": "^3.2.0",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
     "typeorm": "^0.3.31",

@@ -1,0 +1,52 @@
+{
+  "stages": [
+    {
+      "code": "xa",
+      "name": "Xả",
+      "title": "LỆNH XẢ GIẤY",
+      "file": "xa.doc",
+      "template": "xa.template.docx",
+      "source": "QT.01-HABECO-P-01. Biểu mẫu Lệnh Xả giấy.doc"
+    },
+    {
+      "code": "song",
+      "name": "Sóng",
+      "title": "LỆNH SÓNG",
+      "file": "song.doc",
+      "source": "QT.01-HABECO-P-02. Biểu mẫu Lệnh Sóng.doc",
+      "template": "song.template.docx"
+    },
+    {
+      "code": "in",
+      "name": "In",
+      "title": "LỆNH IN",
+      "file": "in.doc",
+      "source": "QT.01-HABECO-P-03. Biểu mẫu Lệnh In.doc",
+      "template": "in.template.docx"
+    },
+    {
+      "code": "kcs",
+      "name": "KCS",
+      "title": "LỆNH KCS TỜ IN",
+      "file": "kcs.doc",
+      "source": "QT.01-HABECO-P-05. Biểu mẫu Lệnh KCS tờ in.doc",
+      "template": "kcs.template.docx"
+    },
+    {
+      "code": "boi",
+      "name": "Bồi",
+      "title": "LỆNH BỒI HỘP",
+      "file": "boi.doc",
+      "source": "QT.01-HABECO-P-06. Biểu mẫu Lệnh bồi hộp.doc",
+      "template": "boi.template.docx"
+    },
+    {
+      "code": "be",
+      "name": "Bế",
+      "title": "LỆNH BẾ",
+      "file": "be.doc",
+      "source": "QT.01-HABECO-P-07. Biểu mẫu Lệnh bế.doc",
+      "template": "be.template.docx"
+    }
+  ]
+}

@@ -17,6 +17,10 @@ export class Stage {
   @Column({ name: 'sort_order', type: 'int', default: 0 })
   sort_order!: number;
 
+  /** Mã biểu mẫu lệnh: xa | song | in | kcs | boi | be */
+  @Column({ name: 'form_code', type: 'varchar', nullable: true })
+  form_code!: string | null;
+
   @Column({ type: 'int', default: 1 })
   active!: number;
 }

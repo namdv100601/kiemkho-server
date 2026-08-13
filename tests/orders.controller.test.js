@@ -70,11 +70,17 @@ function orderRepository() {
 }
 
 function stageRepository() {
+  const byId = {
+    5: { id: 5, name: 'Xả', type: 'supply', active: 1 },
+    6: { id: 6, name: 'Sóng', type: 'supply', active: 1 },
+  };
   return {
     async findOne({ where }) {
-      return where.id === 5
-        ? { id: 5, name: 'Xả', type: 'supply', active: 1 }
-        : null;
+      return byId[where.id] || null;
+    },
+    async find({ where }) {
+      const ids = where?.id?._value || [];
+      return ids.map((id) => byId[id]).filter(Boolean);
     },
   };
 }
@@ -96,6 +102,32 @@ describe('OrdersController', () => {
     assert.equal(orders.saved[0].parent_id, null);
     assert.equal(orders.saved[0].supply_type, null);
     assert.deepEqual(result.children, []);
+  });
+
+  it('tạo lệnh sản xuất kèm lệnh cung cấp Xả/Sóng', async () => {
+    const orders = orderRepository();
+    const controller = new OrdersController(orders, stageRepository());
+
+    await controller.create({
+      code: 'LSX-01',
+      process_id: 7,
+      product_name: 'Hộp bia',
+      quantity: 100,
+      entry_date: '2026-08-11',
+      children: [
+        { code: 'LSX-01-Xả', stage_id: 5, product_name: 'Giấy xả' },
+        { code: 'LSX-01-Sóng', stage_id: 6, product_name: 'Giấy sóng' },
+      ],
+    });
+
+    assert.equal(orders.saved.length, 3);
+    assert.equal(orders.saved[0].supply_type, null);
+    assert.equal(orders.saved[1].parent_id, 1);
+    assert.deepEqual(orders.saved[1].parent_ids, [1]);
+    assert.equal(orders.saved[1].stage_id, 5);
+    assert.equal(orders.saved[1].product_name, 'Giấy xả');
+    assert.equal(orders.saved[2].stage_id, 6);
+    assert.equal(orders.saved[2].product_name, 'Giấy sóng');
   });
 
   it('tạo lệnh cung cấp Nhập lệnh gắn đúng lệnh sản xuất', async () => {

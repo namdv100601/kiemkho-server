@@ -108,12 +108,24 @@ export class SeedService {
 
     if ((await this.stages.count()) === 0) {
       const defaults: Partial<Stage>[] = [
-        { name: 'In', type: 'main', supply_mode: null, sort_order: 1 },
-        { name: 'KCS', type: 'main', supply_mode: null, sort_order: 2 },
-        { name: 'Bồi', type: 'main', supply_mode: null, sort_order: 3 },
-        { name: 'Bế', type: 'main', supply_mode: null, sort_order: 4 },
-        { name: 'Xả', type: 'supply', supply_mode: 'tu_san_xuat', sort_order: 10 },
-        { name: 'Sóng', type: 'supply', supply_mode: 'tu_san_xuat', sort_order: 11 },
+        { name: 'In', type: 'main', supply_mode: null, sort_order: 1, form_code: 'in' },
+        { name: 'KCS', type: 'main', supply_mode: null, sort_order: 2, form_code: 'kcs' },
+        { name: 'Bồi', type: 'main', supply_mode: null, sort_order: 3, form_code: 'boi' },
+        { name: 'Bế', type: 'main', supply_mode: null, sort_order: 4, form_code: 'be' },
+        {
+          name: 'Xả',
+          type: 'supply',
+          supply_mode: 'tu_san_xuat',
+          sort_order: 10,
+          form_code: 'xa',
+        },
+        {
+          name: 'Sóng',
+          type: 'supply',
+          supply_mode: 'tu_san_xuat',
+          sort_order: 11,
+          form_code: 'song',
+        },
       ];
       await this.stages.save(defaults.map((d) => this.stages.create(d)));
       this.logger.log('Seeded default stages');

@@ -14,6 +14,7 @@ import { WorkersModule } from './modules/workers/workers.module';
 import { NormsModule } from './modules/norms/norms.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { TemplatesModule } from './modules/templates/templates.module';
+import { StageWorkOrdersModule } from './modules/stage-work-orders/stage-work-orders.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
 import { SeedModule } from './seed/seed.module';
 import { HealthController } from './health.controller';
@@ -58,6 +59,7 @@ import { HealthController } from './health.controller';
     NormsModule,
     ReportsModule,
     TemplatesModule,
+    StageWorkOrdersModule,
     DashboardModule,
     SeedModule,
   ],
