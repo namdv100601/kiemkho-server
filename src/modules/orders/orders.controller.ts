@@ -66,6 +66,16 @@ export class OrdersController {
     return this.serializeOrder(row);
   }
 
+  private uniqueCodeError(err: unknown) {
+    const message = String((err as Error)?.message || err || '');
+    if (
+      /duplicate key|unique constraint|UQ_be306d9b0945e8ad058743c4bbd/i.test(message)
+    ) {
+      return 'Mã lệnh đã tồn tại. Đổi mã lệnh sản xuất hoặc mã lệnh Xả/Sóng rồi thử lại.';
+    }
+    return message;
+  }
+
   @Get()
   async list(
     @Query('parent_only') parentOnly?: string,
@@ -141,13 +151,16 @@ export class OrdersController {
     }
 
     const childInputs = Array.isArray(children) ? children : [];
+    const allCodes = [code.trim(), ...childInputs.map((child) => (child.code || '').trim())].filter(
+      Boolean
+    );
+    if (new Set(allCodes).size !== allCodes.length) {
+      throw new BadRequestException('Có mã lệnh bị trùng trong form (lệnh SX hoặc Xả/Sóng)');
+    }
     if (childInputs.length) {
       const stageIds = childInputs.map((child) => Number(child.stage_id));
       if (stageIds.some((id) => !Number.isInteger(id) || id <= 0)) {
         throw new BadRequestException('Khâu cung cấp không hợp lệ');
-      }
-      if (new Set(stageIds).size !== stageIds.length) {
-        throw new BadRequestException('Mỗi khâu cung cấp chỉ tạo một lệnh');
       }
       for (const child of childInputs) {
         if (!child.code?.trim() || !child.product_name?.trim()) {
@@ -161,8 +174,9 @@ export class OrdersController {
           throw new BadRequestException('Nhà cung cấp là bắt buộc khi mua ngoài');
         }
       }
-      const supplyStages = await this.stages.find({ where: { id: In(stageIds) } });
-      if (supplyStages.length !== stageIds.length) {
+      const uniqueStageIds = Array.from(new Set(stageIds));
+      const supplyStages = await this.stages.find({ where: { id: In(uniqueStageIds) } });
+      if (supplyStages.length !== uniqueStageIds.length) {
         throw new BadRequestException('Khâu cung cấp không tồn tại');
       }
       if (supplyStages.some((stage) => stage.type !== 'supply' || stage.active !== 1)) {
@@ -209,7 +223,7 @@ export class OrdersController {
       return this.one(String(parent.id));
     } catch (e: unknown) {
       if (e instanceof BadRequestException || e instanceof NotFoundException) throw e;
-      throw new BadRequestException((e as Error).message);
+      throw new BadRequestException(this.uniqueCodeError(e));
     }
   }
 
@@ -291,7 +305,7 @@ export class OrdersController {
       );
       return this.getOrder(row.id);
     } catch (e: unknown) {
-      throw new BadRequestException((e as Error).message);
+      throw new BadRequestException(this.uniqueCodeError(e));
     }
   }
 
