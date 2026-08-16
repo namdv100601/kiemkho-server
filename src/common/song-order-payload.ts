@@ -7,6 +7,7 @@ export type SongVatTuLine = {
 };
 
 export type SongOrderPayload = {
+  nha_cung_cap: string;
   so_luong_yeu_cau: string;
   ngay_du_kien_sx: string;
   kraf_song_gms: string;
@@ -55,6 +56,7 @@ export function normalizeSongPayload(raw: unknown): SongOrderPayload {
     );
 
   return {
+    nha_cung_cap: str(src.nha_cung_cap),
     so_luong_yeu_cau: str(src.so_luong_yeu_cau),
     ngay_du_kien_sx: str(src.ngay_du_kien_sx),
     kraf_song_gms: str(src.kraf_song_gms),

@@ -44,9 +44,13 @@ export class ReportsController {
     @Query('stage_id') stage_id?: string,
     @Query('month') month?: string,
     @Query('date') date?: string,
-    @Query('shift') shift?: string
+    @Query('shift') shift?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('product') product?: string,
+    @Query('material') material?: string
   ) {
-    return this.reports.monthly({ stage_id, month, date, shift });
+    return this.reports.monthly({ stage_id, month, date, shift, from, to, product, material });
   }
 
   private sendExcel(res: Response | undefined, buf: Buffer, filename: string) {
@@ -63,9 +67,24 @@ export class ReportsController {
   async exportMonthly(
     @Query('stage_id') stage_id?: string,
     @Query('month') month?: string,
+    @Query('date') date?: string,
+    @Query('shift') shift?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('product') product?: string,
+    @Query('material') material?: string,
     @Res({ passthrough: true }) res?: Response
   ) {
-    const { buf, filename } = await this.reports.exportMonthly(stage_id, month);
+    const { buf, filename } = await this.reports.exportMonthly({
+      stage_id,
+      month,
+      date,
+      shift,
+      from,
+      to,
+      product,
+      material,
+    });
     return this.sendExcel(res, buf, filename);
   }
 
@@ -75,9 +94,15 @@ export class ReportsController {
   async exportMonthlyXlsx(
     @Query('stage_id') stage_id?: string,
     @Query('month') month?: string,
+    @Query('date') date?: string,
+    @Query('shift') shift?: string,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+    @Query('product') product?: string,
+    @Query('material') material?: string,
     @Res({ passthrough: true }) res?: Response
   ) {
-    return this.exportMonthly(stage_id, month, res);
+    return this.exportMonthly(stage_id, month, date, shift, from, to, product, material, res);
   }
 
   @Get('export/daily')

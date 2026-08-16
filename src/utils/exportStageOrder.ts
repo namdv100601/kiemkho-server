@@ -64,6 +64,7 @@ function songValues(row: StageWorkOrder): Record<string, string> {
   const lines = Array.isArray(p.vat_tu_lines) ? (p.vat_tu_lines as Record<string, string>[]) : [];
   const values: Record<string, string> = {
     ...commonValues(row),
+    nha_cung_cap: s(p.nha_cung_cap),
     so_luong_yeu_cau: s(p.so_luong_yeu_cau),
     ngay_du_kien_sx: dmy(s(p.ngay_du_kien_sx)),
     kraf_song_gms: s(p.kraf_song_gms),

@@ -38,10 +38,12 @@ export type ReportLineInput = {
 };
 
 type ExportableLine = {
+  line_type?: 'lenh' | 'nvl';
   order_code?: string | null;
   material_name?: string | null;
   product_name?: string | null;
   order_product?: string | null;
+  order2_product?: string | null;
   ton_dau?: number;
   nhap?: number;
   ton_cuoi?: number;
@@ -51,6 +53,17 @@ type ExportableLine = {
   workers?: { full_name: string }[];
 };
 
+type MonthlyQuery = {
+  stage_id?: string;
+  month?: string;
+  date?: string;
+  from?: string;
+  to?: string;
+  shift?: string;
+  product?: string;
+  material?: string;
+};
+
 function resolveTonCuoi(line: ReportLineInput): number {
   if (line.ton_cuoi != null) return Number(line.ton_cuoi);
   const tonDau = Number(line.ton_dau || 0);
@@ -58,6 +71,10 @@ function resolveTonCuoi(line: ReportLineInput): number {
   const dat = Number(line.dat || 0);
   const hong = Number(line.hong_sx || 0) + Number(line.hong_khac || 0);
   return tonDau + nhap - dat - hong;
+}
+
+function normalizedName(value: unknown): string {
+  return String(value || '').trim().toLocaleLowerCase('vi');
 }
 
 @Injectable()
@@ -108,6 +125,7 @@ export class ReportsService {
           order_code: l.order_code_text || order?.code || null,
           order_product: order?.product_name || null,
           order2_code: l.order2_code_text || order2?.code || null,
+          order2_product: order2?.product_name || null,
           workers: l.workers_json || [],
           hong: Number(l.hong_sx || 0) + Number(l.hong_khac || 0),
           tieu_hao: Number(l.dat || 0) + Number(l.hong_sx || 0) + Number(l.hong_khac || 0),
@@ -188,19 +206,48 @@ export class ReportsService {
     });
   }
 
-  async monthly(query: { stage_id?: string; month?: string; date?: string; shift?: string }) {
-    if (!query.month) throw new BadRequestException('Cần chọn Tháng');
+  private filterMonthlyLines<T extends ExportableLine>(lines: T[], query: MonthlyQuery): T[] {
+    const product = String(query.product || '').trim().toLocaleLowerCase('vi');
+    const material = String(query.material || '').trim().toLocaleLowerCase('vi');
+    return lines.filter((line) => {
+      const isOrderLine =
+        line.line_type !== 'nvl' && Boolean(String(line.order_code || '').trim());
+      if (!isOrderLine) return false;
+      const productName = String(line.product_name || line.order2_product || line.order_product || '')
+        .trim()
+        .toLocaleLowerCase('vi');
+      const materialName = String(line.material_name || '').trim().toLocaleLowerCase('vi');
+      return (!product || productName.includes(product)) && (!material || materialName.includes(material));
+    });
+  }
+
+  private applyMonthlyReportFilters(
+    qb: ReturnType<Repository<ShiftReport>['createQueryBuilder']>,
+    query: MonthlyQuery
+  ) {
+    if (query.month) {
+      qb.andWhere(`to_char(r.report_date::date, 'YYYY-MM') = :month`, { month: query.month });
+    }
+    if (query.date) qb.andWhere('r.report_date = :date', { date: query.date });
+    if (query.from) qb.andWhere('r.report_date >= :from', { from: query.from });
+    if (query.to) qb.andWhere('r.report_date <= :to', { to: query.to });
+    if (query.stage_id) qb.andWhere('r.stage_id = :stageId', { stageId: Number(query.stage_id) });
+    if (query.shift) qb.andWhere('r.shift = :shift', { shift: query.shift });
+    return qb;
+  }
+
+  async monthly(query: MonthlyQuery) {
+    if (!query.month && !query.date && !query.from && !query.to) {
+      throw new BadRequestException('Cần chọn khoảng thời gian');
+    }
     const qb = this.reports
       .createQueryBuilder('r')
       .leftJoinAndSelect('r.stage', 's')
       .leftJoinAndSelect('r.creator', 'u')
-      .where(`to_char(r.report_date::date, 'YYYY-MM') = :month`, { month: query.month })
       .orderBy('r.report_date', 'ASC')
       .addOrderBy('r.shift', 'ASC')
       .addOrderBy('r.id', 'ASC');
-    if (query.stage_id) qb.andWhere('r.stage_id = :stageId', { stageId: Number(query.stage_id) });
-    if (query.date) qb.andWhere('r.report_date = :date', { date: query.date });
-    if (query.shift) qb.andWhere('r.shift = :shift', { shift: query.shift });
+    this.applyMonthlyReportFilters(qb, query);
 
     const reports = await qb.getMany();
     const groups: Record<
@@ -210,6 +257,9 @@ export class ReportsService {
     for (const r of reports) {
       const detail = await this.getReportDetail(r.id);
       if (!detail) continue;
+      const filteredLines = this.filterMonthlyLines(detail.lines || [], query);
+      if (!filteredLines.length) continue;
+      const filteredDetail = { ...detail, lines: filteredLines };
       const key = `${detail.report_date}|${detail.shift}`;
       if (!groups[key]) {
         groups[key] = {
@@ -219,26 +269,25 @@ export class ReportsService {
           reports: [],
         };
       }
-      groups[key].reports.push(detail);
+      groups[key].reports.push(filteredDetail);
     }
     return { groups: Object.values(groups) };
   }
 
-  async exportMonthly(stageId?: string, month?: string) {
-    if (!stageId || !month) {
-      throw new BadRequestException('Cần chọn Khâu và Tháng để xuất Excel');
+  async exportMonthly(query: MonthlyQuery) {
+    if (!query.stage_id || (!query.month && !query.date && !query.from && !query.to)) {
+      throw new BadRequestException('Cần chọn Khâu và khoảng thời gian để xuất Excel');
     }
-    const stage = await this.stages.findOne({ where: { id: Number(stageId) } });
+    const stage = await this.stages.findOne({ where: { id: Number(query.stage_id) } });
     if (!stage) throw new NotFoundException('Không tìm thấy khâu');
 
-    const reports = await this.reports
+    const qb = this.reports
       .createQueryBuilder('r')
-      .where('r.stage_id = :stageId', { stageId: Number(stageId) })
-      .andWhere(`to_char(r.report_date::date, 'YYYY-MM') = :month`, { month })
       .orderBy('r.report_date', 'ASC')
       .addOrderBy('r.shift', 'ASC')
-      .addOrderBy('r.id', 'ASC')
-      .getMany();
+      .addOrderBy('r.id', 'ASC');
+    this.applyMonthlyReportFilters(qb, query);
+    const reports = await qb.getMany();
 
     const details: {
       report_date: string;
@@ -249,19 +298,22 @@ export class ReportsService {
     for (const r of reports) {
       const d = await this.getReportDetail(r.id);
       if (!d) continue;
+      const filteredLines = this.filterMonthlyLines((d.lines || []) as ExportableLine[], query);
+      if (!filteredLines.length) continue;
       details.push({
         report_date: d.report_date,
         shift: d.shift,
         created_by_name: d.created_by_name || '',
-        lines: (d.lines || []) as ExportableLine[],
+        lines: filteredLines,
       });
     }
 
     const buf = buildMonthlyWorkbook(stage.name, details);
     const safeName = stage.name.replace(/[^\w\-]+/g, '_');
+    const rangeKey = query.date || (query.from && query.to ? `${query.from}_${query.to}` : query.month) || 'bao-cao';
     return {
       buf,
-      filename: `bao-cao-${safeName}-${month}.xlsx`,
+      filename: `bao-cao-${safeName}-${rangeKey}.xlsx`,
     };
   }
 
@@ -295,18 +347,34 @@ export class ReportsService {
 
     const reportIds = await qb.getMany();
     const lines: Parameters<typeof buildDailyWorkbook>[1] = [];
+    const normRows = await this.norms.find();
+    const normByStageAndProduct = new Map(
+      normRows.map((norm) => [
+        `${norm.stage_id}|${normalizedName(norm.product_name)}`,
+        Number(norm.norm_value),
+      ])
+    );
 
     for (const r of reportIds) {
       const detail = await this.getReportDetail(r.id);
       if (!detail) continue;
       for (const line of detail.lines || []) {
-        const product = line.product_name || line.order_product || '';
+        const products = [
+          line.product_name,
+          line.order2_product,
+          line.order_product,
+        ]
+          .map((value) => String(value || '').trim())
+          .filter((value, index, all) => value && all.indexOf(value) === index);
         let normValue: number | null = null;
-        if (product) {
-          const norm = await this.norms.findOne({
-            where: { stage_id: detail.stage_id, product_name: product },
-          });
-          normValue = norm?.norm_value ?? null;
+        for (const product of products) {
+          const found = normByStageAndProduct.get(
+            `${detail.stage_id}|${normalizedName(product)}`
+          );
+          if (found !== undefined) {
+            normValue = found;
+            break;
+          }
         }
         lines.push({
           stage_name: detail.stage_name as string,
@@ -314,7 +382,7 @@ export class ReportsService {
           report_date: detail.report_date,
           note: detail.note || '',
           order_code: line.order_code,
-          product_name: line.product_name,
+          product_name: line.product_name || line.order2_product,
           order_product: line.order_product,
           material_name: line.material_name,
           ton_dau: line.ton_dau,
