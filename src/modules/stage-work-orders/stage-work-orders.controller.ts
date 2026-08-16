@@ -35,7 +35,7 @@ const STAGE_CODES = ['xa', 'song', 'in', 'kcs', 'boi', 'be'] as const;
 type StageCode = (typeof STAGE_CODES)[number];
 
 const DEFAULTS = {
-  nguoi_lap: 'Phạm Thị Thu Hương',
+  nguoi_lap: '',
   giam_doc: 'Nguyễn Khánh Vi',
 };
 
@@ -92,7 +92,7 @@ export class StageWorkOrdersController {
       ngay_dua_lenh,
       ngay_hoan_thanh: body.ngay_hoan_thanh?.trim() || null,
       ghi_chu: body.ghi_chu?.trim() || null,
-      nguoi_lap: body.nguoi_lap?.trim() || DEFAULTS.nguoi_lap,
+      nguoi_lap: body.nguoi_lap?.trim() || DEFAULTS.nguoi_lap || null,
       giam_doc: body.giam_doc?.trim() || DEFAULTS.giam_doc,
       payload,
     };

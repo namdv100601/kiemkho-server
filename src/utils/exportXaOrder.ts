@@ -30,8 +30,15 @@ export async function exportXaOrderDocx(row: StageWorkOrder): Promise<Buffer> {
   const file = zip.file('word/document.xml');
   if (!file) throw new Error('Không đọc được biểu mẫu Xả giấy');
 
+  const supplier =
+    row.payload && typeof row.payload === 'object' && 'nha_cung_cap' in row.payload
+      ? String((row.payload as { nha_cung_cap?: unknown }).nha_cung_cap || '').trim()
+      : '';
+  const product = (row.ten_san_pham || '').trim();
+  const tenWithSupplier = product && supplier ? `${product} - ${supplier}` : product || supplier;
+
   const values: Record<string, string> = {
-    ten_san_pham: row.ten_san_pham || '',
+    ten_san_pham: tenWithSupplier,
     kich_thuoc_xa: row.kich_thuoc_xa || '',
     dinh_luong_xuat: row.dinh_luong_xuat || '',
     khoi_luong: row.khoi_luong || '',

@@ -62,9 +62,14 @@ function commonValues(row: StageWorkOrder): Record<string, string> {
 function songValues(row: StageWorkOrder): Record<string, string> {
   const p = payloadOf(row);
   const lines = Array.isArray(p.vat_tu_lines) ? (p.vat_tu_lines as Record<string, string>[]) : [];
+  const supplier = s(p.nha_cung_cap);
+  const product = (row.ten_san_pham || '').trim();
+  const tenWithSupplier =
+    product && supplier ? `${product} - ${supplier}` : product || supplier;
   const values: Record<string, string> = {
     ...commonValues(row),
-    nha_cung_cap: s(p.nha_cung_cap),
+    ten_san_pham: tenWithSupplier,
+    nha_cung_cap: supplier,
     so_luong_yeu_cau: s(p.so_luong_yeu_cau),
     ngay_du_kien_sx: dmy(s(p.ngay_du_kien_sx)),
     kraf_song_gms: s(p.kraf_song_gms),
@@ -218,7 +223,7 @@ export function sampleStageOrder(stageCode: string): StageWorkOrder {
     ngay_dua_lenh: today,
     ngay_hoan_thanh: today,
     ghi_chu: null as string | null,
-    nguoi_lap: 'Phạm Thị Thu Hương',
+    nguoi_lap: '',
     giam_doc: 'Nguyễn Khánh Vi',
     payload: null as Record<string, unknown> | null,
     created_at: new Date(),
