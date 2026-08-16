@@ -18,6 +18,9 @@ export class Product {
   @Column({ name: 'stage_id', type: 'int', nullable: true })
   stage_id!: number | null;
 
+  @Column({ type: 'varchar', nullable: true })
+  code!: string | null;
+
   @Column({ type: 'varchar' })
   name!: string;
 

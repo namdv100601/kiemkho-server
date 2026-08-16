@@ -41,14 +41,21 @@ export class MaterialsController {
     });
   }
 
+  private normalizeCode(value: unknown): string | null {
+    if (value === undefined || value === null) return null;
+    const code = String(value).trim();
+    return code || null;
+  }
+
   @Post()
   @Roles('quan_ly')
-  async create(@Body() body: { stage_id?: number; name?: string; unit?: string }) {
+  async create(@Body() body: { stage_id?: number; code?: string; name?: string; unit?: string }) {
     const { stage_id, name, unit } = body || {};
     if (!stage_id || !name) throw new BadRequestException('Thiếu khâu hoặc tên NVL');
     try {
       const row = this.materials.create({
         stage_id,
+        code: this.normalizeCode(body?.code),
         name: name.trim(),
         unit: unit === undefined ? 'tấm' : unit.trim() || null,
       });
@@ -62,11 +69,12 @@ export class MaterialsController {
   @Roles('quan_ly')
   async update(
     @Param('id') id: string,
-    @Body() body: { stage_id?: number; name?: string; unit?: string }
+    @Body() body: { stage_id?: number; code?: string; name?: string; unit?: string }
   ) {
     const row = await this.materials.findOne({ where: { id: Number(id) } });
     if (!row) throw new NotFoundException('Không tìm thấy');
     if (body.stage_id != null) row.stage_id = body.stage_id;
+    if (body.code !== undefined) row.code = this.normalizeCode(body.code);
     if (body.name != null) row.name = body.name.trim();
     if (body.unit != null) row.unit = body.unit.trim() || null;
     try {

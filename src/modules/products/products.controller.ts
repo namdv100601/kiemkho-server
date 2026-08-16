@@ -43,6 +43,12 @@ export class ProductsController {
     return stageId;
   }
 
+  private normalizeCode(value: unknown): string | null {
+    if (value === undefined || value === null) return null;
+    const code = String(value).trim();
+    return code || null;
+  }
+
   private async assertUniqueName(name: string, stageId: number | null, excludeId?: number) {
     const existing = await this.products.findOne({
       where: stageId == null ? { name, stage_id: IsNull() } : { name, stage_id: stageId },
@@ -72,7 +78,9 @@ export class ProductsController {
 
   @Post()
   @Roles('quan_ly')
-  async create(@Body() body: { stage_id?: number | null; name?: string; unit?: string }) {
+  async create(
+    @Body() body: { stage_id?: number | null; code?: string; name?: string; unit?: string }
+  ) {
     const name = body?.name?.trim();
     if (!name) throw new BadRequestException('Thiếu tên sản phẩm');
     const stageId = this.parseStageId(body?.stage_id);
@@ -81,6 +89,7 @@ export class ProductsController {
       const row = await this.products.save(
         this.products.create({
           stage_id: stageId,
+          code: this.normalizeCode(body?.code),
           name,
           unit: body.unit?.trim() || null,
         })
@@ -99,12 +108,13 @@ export class ProductsController {
   @Roles('quan_ly')
   async update(
     @Param('id') id: string,
-    @Body() body: { stage_id?: number | null; name?: string; unit?: string }
+    @Body() body: { stage_id?: number | null; code?: string; name?: string; unit?: string }
   ) {
     const row = await this.products.findOne({ where: { id: Number(id) } });
     if (!row) throw new NotFoundException('Không tìm thấy');
 
     if (body.stage_id !== undefined) row.stage_id = this.parseStageId(body.stage_id);
+    if (body.code !== undefined) row.code = this.normalizeCode(body.code);
     if (body.name != null) {
       const name = body.name.trim();
       if (!name) throw new BadRequestException('Thiếu tên sản phẩm');

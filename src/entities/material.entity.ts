@@ -17,6 +17,9 @@ export class Material {
   @Column({ name: 'stage_id', type: 'int' })
   stage_id!: number;
 
+  @Column({ type: 'varchar', nullable: true })
+  code!: string | null;
+
   @Column({ type: 'varchar' })
   name!: string;
 
