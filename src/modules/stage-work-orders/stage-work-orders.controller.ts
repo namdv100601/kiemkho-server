@@ -30,6 +30,8 @@ import {
   exportStageOrderDocx,
   sampleStageOrder,
 } from '../../utils/exportStageOrder';
+import { exportSongOrderXlsx, songExcelFileName } from '../../utils/exportSongOrderExcel';
+import { exportXaOrderXlsx, xaExcelFileName } from '../../utils/exportXaOrderExcel';
 
 const STAGE_CODES = ['xa', 'song', 'in', 'kcs', 'boi', 'be'] as const;
 type StageCode = (typeof STAGE_CODES)[number];
@@ -48,6 +50,9 @@ type ManifestStage = {
   file: string;
   template?: string;
   source: string;
+  excel_file?: string;
+  excel_source?: string;
+  formats?: ('word' | 'excel')[];
 };
 
 @ApiTags('stage-work-orders')
@@ -124,8 +129,15 @@ export class StageWorkOrdersController {
         });
         const order_count = await this.orders.count({ where: { stage_code: stage.code } });
         const linked = linkedStages.filter((s) => s.form_code === stage.code);
+        const formats = stage.formats?.length
+          ? stage.formats
+          : stage.excel_file
+            ? (['word', 'excel'] as const)
+            : (['word'] as const);
         return {
           ...stage,
+          formats: [...formats],
+          has_excel: Boolean(stage.excel_file),
           order_count,
           fillable: true,
           recent_orders: recent,
@@ -150,6 +162,24 @@ export class StageWorkOrdersController {
     return new StreamableFile(buf);
   }
 
+  @Get('templates/:code/excel-file')
+  async templateExcelFile(@Param('code') code: string, @Res({ passthrough: true }) res: Response) {
+    const stage = this.findManifestStage(code);
+    if (!stage.excel_file) throw new NotFoundException('Khâu này chưa có mẫu Excel');
+    const path = join(TEMPLATES_DIR, stage.excel_file);
+    if (!existsSync(path)) throw new NotFoundException('File Excel biểu mẫu không tồn tại');
+    const buf = readFileSync(path);
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="${stage.excel_file.replace(/[^\w.-]+/g, '_')}"`
+    );
+    return new StreamableFile(buf);
+  }
+
   @Get('templates/:code/preview')
   async templatePreview(@Param('code') code: string, @Res({ passthrough: true }) res: Response) {
     const stage = this.findManifestStage(code);
@@ -164,6 +194,32 @@ export class StageWorkOrdersController {
       `attachment; filename="Xem-truoc-${exportFileName(sample)}"`
     );
     return new StreamableFile(Buffer.from(buf));
+  }
+
+  @Get('templates/:code/preview-excel')
+  async templatePreviewExcel(
+    @Param('code') code: string,
+    @Res({ passthrough: true }) res: Response
+  ) {
+    const stage = this.findManifestStage(code);
+    if (!stage.excel_file) throw new NotFoundException('Khâu này chưa có mẫu Excel');
+    if (stage.code !== 'song' && stage.code !== 'xa') {
+      throw new BadRequestException('Chưa hỗ trợ xem trước Excel cho khâu này');
+    }
+    const sample = sampleStageOrder(stage.code);
+    const buf =
+      stage.code === 'xa' ? await exportXaOrderXlsx(sample) : await exportSongOrderXlsx(sample);
+    const filename =
+      stage.code === 'xa' ? xaExcelFileName(sample) : songExcelFileName(sample);
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="Xem-truoc-${filename}"`
+    );
+    return new StreamableFile(buf);
   }
 
   @Get()
@@ -229,5 +285,32 @@ export class StageWorkOrdersController {
     );
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     return new StreamableFile(Buffer.from(buf));
+  }
+
+  @Get(':id/export-excel')
+  async exportExcel(@Param('id') id: string, @Res({ passthrough: true }) res: Response) {
+    const row = await this.orders.findOne({ where: { id: Number(id) } });
+    if (!row) throw new NotFoundException('Không tìm thấy lệnh');
+    if (row.stage_code === 'song') {
+      const buf = await exportSongOrderXlsx(row);
+      const filename = songExcelFileName(row);
+      res.setHeader(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      );
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      return new StreamableFile(buf);
+    }
+    if (row.stage_code === 'xa') {
+      const buf = await exportXaOrderXlsx(row);
+      const filename = xaExcelFileName(row);
+      res.setHeader(
+        'Content-Type',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+      );
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      return new StreamableFile(buf);
+    }
+    throw new BadRequestException('Chưa hỗ trợ xuất Excel cho khâu này');
   }
 }

@@ -239,6 +239,27 @@ export function sampleStageOrder(stageCode: string): StageWorkOrder {
       khoi_luong: '7.362 kg',
       so_lenh: 'XH-DEMO',
       ghi_chu: 'Mẫu xem trước',
+      payload: {
+        nha_cung_cap: 'Hansol',
+        so_qua: 8,
+        trong_luong_qua: 920,
+        so_luong_tuong_ung: '12000',
+        ket_qua_lines: [
+          {
+            ngay_san_xuat: today,
+            ngay_nhap: today,
+            kiem_tra_ngoai_quan: 'Đạt',
+            dinh_luong_dau_vao: '230',
+            khoi_luong_tren_qua: '920',
+            khoi_luong_can_lai: '915',
+            rach_san_xuat: '',
+            rach_truoc: '',
+            vo_loi: '',
+            thanh_pham_thuc_te: '11800',
+            dinh_luong_kiem_tra: '228',
+          },
+        ],
+      },
     } as StageWorkOrder;
   }
   if (stageCode === 'song') {

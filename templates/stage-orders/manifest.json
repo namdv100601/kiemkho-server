@@ -6,7 +6,10 @@
       "title": "LỆNH XẢ GIẤY",
       "file": "xa.doc",
       "template": "xa.template.docx",
-      "source": "QT.01-HABECO-P-01. Biểu mẫu Lệnh Xả giấy.doc"
+      "source": "Mau-bieu-mau-xa.doc",
+      "excel_file": "xa.xlsx",
+      "excel_source": "LỆNH XẢ BIA HƠI -2026-08.xlsx",
+      "formats": ["word", "excel"]
     },
     {
       "code": "song",
@@ -14,7 +17,10 @@
       "title": "LỆNH SÓNG",
       "file": "song.doc",
       "source": "QT.01-HABECO-P-02. Biểu mẫu Lệnh Sóng.doc",
-      "template": "song.template.docx"
+      "template": "song.template.docx",
+      "excel_file": "song.xlsx",
+      "excel_source": "LỆNH SẢN XUẤT SÓNG 2628 mẫu.xlsx",
+      "formats": ["word", "excel"]
     },
     {
       "code": "in",
@@ -22,7 +28,8 @@
       "title": "LỆNH IN",
       "file": "in.doc",
       "source": "QT.01-HABECO-P-03. Biểu mẫu Lệnh In.doc",
-      "template": "in.template.docx"
+      "template": "in.template.docx",
+      "formats": ["word"]
     },
     {
       "code": "kcs",
@@ -30,7 +37,8 @@
       "title": "LỆNH KCS TỜ IN",
       "file": "kcs.doc",
       "source": "QT.01-HABECO-P-05. Biểu mẫu Lệnh KCS tờ in.doc",
-      "template": "kcs.template.docx"
+      "template": "kcs.template.docx",
+      "formats": ["word"]
     },
     {
       "code": "boi",
@@ -38,7 +46,8 @@
       "title": "LỆNH BỒI HỘP",
       "file": "boi.doc",
       "source": "QT.01-HABECO-P-06. Biểu mẫu Lệnh bồi hộp.doc",
-      "template": "boi.template.docx"
+      "template": "boi.template.docx",
+      "formats": ["word"]
     },
     {
       "code": "be",
@@ -46,7 +55,8 @@
       "title": "LỆNH BẾ",
       "file": "be.doc",
       "source": "QT.01-HABECO-P-07. Biểu mẫu Lệnh bế.doc",
-      "template": "be.template.docx"
+      "template": "be.template.docx",
+      "formats": ["word"]
     }
   ]
 }

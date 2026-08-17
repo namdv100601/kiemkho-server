@@ -45,34 +45,37 @@ function borderlessTable(rowsXml) {
   );
 }
 
-// ===== 1–8: bảng 2 cột để 2/4/6/8 thẳng hàng =====
+// Biểu mẫu mới: cột trái 1–5, cột phải 6–10 (số quả + trọng lượng/quả)
 const fieldStart = xml.lastIndexOf('<w:p ', xml.indexOf('1. Tên sản phẩm'));
 const signTblStart = xml.lastIndexOf('<w:tbl>', xml.indexOf('NGƯỜI LẬP'));
 if (fieldStart < 0 || signTblStart < 0) {
-  throw new Error('Không tìm thấy vùng trường 1–8');
+  throw new Error('Không tìm thấy vùng trường 1–10');
 }
 
 const fieldsTable =
   borderlessTable(
-    row('1. Tên sản phẩm: {{ten_san_pham}}', '2. Kích thước xả: {{kich_thuoc_xa}}') +
-      row('3. Định lượng xuất: {{dinh_luong_xuat}}', '4. Khối lượng: {{khoi_luong}}') +
-      row('5. Số lệnh: {{so_lenh}}', '6. Ngày đưa lệnh: {{ngay_dua_lenh}}') +
-      row('7. Ngày hoàn thành: {{ngay_hoan_thanh}}', '8. Ghi chú: {{ghi_chu}}')
+    row('1. Tên sản phẩm: {{ten_san_pham}}', '6. Khối lượng: {{khoi_luong}}') +
+      row(
+        '2. Kích thước xả: {{kich_thuoc_xa}}',
+        '7. Số quả: {{so_qua}} — Trọng lượng/quả: {{trong_luong_qua}}'
+      ) +
+      row(
+        '3. Định lượng xuất: {{dinh_luong_xuat}}',
+        '8. Số lượng tương ứng: {{so_luong_tuong_ung}} Tờ'
+      ) +
+      row('4. Ngày đưa lệnh: {{ngay_dua_lenh}}', '9. Ngày hoàn thành: {{ngay_hoan_thanh}}') +
+      row('5. Số lệnh: {{so_lenh}}', '10. Ghi chú: {{ghi_chu}}')
   ) + `<w:p><w:pPr><w:spacing w:after="200"/></w:pPr></w:p>`;
 
 xml = xml.slice(0, fieldStart) + fieldsTable + xml.slice(signTblStart);
-console.log('OK fields 2/4/6/8 aligned');
+console.log('OK fields 1–10 aligned');
 
-// ===== Giữ nguyên khối chữ ký mẫu (NGƯỜI LẬP / GIÁM ĐỐC) =====
-// Thêm 1 hàng tên bên dưới bảng chữ ký, trước "Kết quả sản xuất"
 const signTblEnd = xml.indexOf('</w:tbl>', xml.indexOf('NGƯỜI LẬP'));
 if (signTblEnd < 0) throw new Error('Không tìm thấy hết bảng chữ ký');
 
 const namesRow =
   `<w:p><w:pPr><w:spacing w:before="200" w:after="80"/></w:pPr></w:p>` +
-  borderlessTable(
-    row('{{nguoi_lap}}', '{{giam_doc}}', { center: true, bold: true })
-  ) +
+  borderlessTable(row('{{nguoi_lap}}', '{{giam_doc}}', { center: true, bold: true })) +
   `<w:p><w:pPr><w:spacing w:after="200"/></w:pPr></w:p>`;
 
 const insertAt = signTblEnd + '</w:tbl>'.length;

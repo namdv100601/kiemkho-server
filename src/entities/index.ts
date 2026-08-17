@@ -10,6 +10,9 @@ import { Norm } from './norm.entity';
 import { ShiftReport, ShiftReportLine, Handover } from './shift-report.entity';
 import { EntryTemplate } from './entry-template.entity';
 import { StageWorkOrder } from './stage-work-order.entity';
+import { SongProductNorm } from './song-product-norm.entity';
+import { XaProductNorm } from './xa-product-norm.entity';
+import { StageFormProductNorm } from './stage-form-product-norm.entity';
 
 export const entities = [
   User,
@@ -28,6 +31,9 @@ export const entities = [
   Handover,
   EntryTemplate,
   StageWorkOrder,
+  SongProductNorm,
+  XaProductNorm,
+  StageFormProductNorm,
 ];
 
 export {
@@ -47,4 +53,7 @@ export {
   Handover,
   EntryTemplate,
   StageWorkOrder,
+  SongProductNorm,
+  XaProductNorm,
+  StageFormProductNorm,
 };

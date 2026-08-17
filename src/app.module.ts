@@ -12,6 +12,9 @@ import { ProductsModule } from './modules/products/products.module';
 import { UnitsModule } from './modules/units/units.module';
 import { WorkersModule } from './modules/workers/workers.module';
 import { NormsModule } from './modules/norms/norms.module';
+import { SongProductNormsModule } from './modules/song-product-norms/song-product-norms.module';
+import { XaProductNormsModule } from './modules/xa-product-norms/xa-product-norms.module';
+import { StageFormProductNormsModule } from './modules/stage-form-product-norms/stage-form-product-norms.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { TemplatesModule } from './modules/templates/templates.module';
 import { StageWorkOrdersModule } from './modules/stage-work-orders/stage-work-orders.module';
@@ -57,6 +60,9 @@ import { HealthController } from './health.controller';
     UnitsModule,
     WorkersModule,
     NormsModule,
+    SongProductNormsModule,
+    XaProductNormsModule,
+    StageFormProductNormsModule,
     ReportsModule,
     TemplatesModule,
     StageWorkOrdersModule,
