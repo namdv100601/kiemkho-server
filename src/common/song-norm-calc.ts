@@ -64,7 +64,7 @@ export function defaultSongNormPayload(): SongNormPayload {
       chieu_doc: 'Theo chiều 820 mm',
     },
     kraft_song: {
-      so_to: 135600,
+      so_to: 200000,
       dinh_luong: 0.125,
       kt1: 0.82,
       kt2: 0.533,
@@ -72,7 +72,7 @@ export function defaultSongNormPayload(): SongNormPayload {
       hao_phi: 1.05,
     },
     kraft_mat: {
-      so_to: 144100,
+      so_to: 200000,
       dinh_luong: 0.14,
       kt1: 0.82,
       kt2: 0.533,
@@ -146,10 +146,13 @@ export function normalizeSongNormPayload(raw: unknown): SongNormPayload {
   };
 }
 
-/** Tính dòng vật tư lệnh Sóng từ định mức + số lượng tấm. */
+/** Tính dòng vật tư lệnh Sóng từ định mức + số lượng tấm.
+ * Số tờ Kraft sóng/mặt luôn = số lượng tấm.
+ */
 export function buildSongVatTuFromNorm(payload: SongNormPayload, soLuongTam: number) {
-  const songKg = kraftSongKg(payload.kraft_song);
-  const matKg = kraftMatKg(payload.kraft_mat);
+  const qty = Number.isFinite(soLuongTam) && soLuongTam > 0 ? soLuongTam : 0;
+  const songKg = kraftSongKg({ ...payload.kraft_song, so_to: qty });
+  const matKg = kraftMatKg({ ...payload.kraft_mat, so_to: qty });
   const gmsSong = payload.paper.kraf_song_gms || '125';
   const mmSong = payload.paper.kraf_song_mm || '1650';
   const gmsMat = payload.paper.kraf_mat_gms || '150';
@@ -179,7 +182,7 @@ export function buildSongVatTuFromNorm(payload: SongNormPayload, soLuongTam: num
   ];
 
   for (const m of payload.materials) {
-    const kg = nvlKg(soLuongTam, m.dm_per_1000);
+    const kg = nvlKg(qty, m.dm_per_1000);
     lines.push({
       vat_tu: m.name,
       dvt: m.unit || 'Kg',
@@ -190,4 +193,17 @@ export function buildSongVatTuFromNorm(payload: SongNormPayload, soLuongTam: num
   }
 
   return { kraft_song_kg: songKg, kraft_mat_kg: matKg, lines };
+}
+
+/**
+ * Áp định mức theo số lượng tấm yêu cầu.
+ * Số tờ Kraft sóng/mặt = số lượng tấm (không scale riêng từng loại).
+ */
+export function songNormForQuantity(
+  payload: SongNormPayload,
+  soLuongTam: number,
+  _refQty = 200000
+) {
+  const qty = Number.isFinite(soLuongTam) && soLuongTam > 0 ? soLuongTam : 0;
+  return buildSongVatTuFromNorm(payload, qty);
 }
